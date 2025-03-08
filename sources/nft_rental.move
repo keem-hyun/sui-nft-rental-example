@@ -15,9 +15,12 @@ use sui::{
     coin::{Self, Coin},
     kiosk::{Kiosk, KioskOwnerCap},
     kiosk_extension,
-    package::Publisher,
+    package::{Self, Publisher},
     sui::SUI,
-    transfer_policy::{Self, TransferPolicy, TransferPolicyCap, has_rule}
+    transfer_policy::{Self, TransferPolicy, TransferPolicyCap, has_rule},
+    transfer,
+    object::{Self, ID, UID},
+    tx_context::{Self, TxContext}
 };
 
 // === Imports ===
@@ -97,7 +100,17 @@ public struct ProtectedTP<phantom T> has key, store {
     policy_cap: TransferPolicyCap<T>,
 }
 
+/// One-time witness for the module.
+public struct RENTABLES_EXT has drop {}
+
 // === Public Functions ===
+
+/// Module initializer called once during package publish.
+/// Creates and shares a Publisher object for this package.
+fun init(witness: RENTABLES_EXT, ctx: &mut TxContext) {
+    let publisher = package::claim(witness, ctx);
+    transfer::public_share_object(publisher);
+}
 
 /// Enables someone to install the Rentables extension in their Kiosk.
 public fun install(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
